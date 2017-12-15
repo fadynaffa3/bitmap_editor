@@ -1,6 +1,9 @@
 require_relative 'validation_error'
+require_relative 'validator'
 
 class BitmapEditor
+  include Validator
+
   COMMANDS = { I: { name: 'create',          length: 3 },
                C: { name: 'clear',           length: 1 },
                L: { name: 'colour',          length: 4 },
@@ -50,6 +53,12 @@ class BitmapEditor
     @image[coordinates[1]][coordinates[0]] = colour
   end
 
+  def array_coordinates(x, y)
+    x = x.to_i
+    y = y.to_i
+    [x - 1, y - 1]
+  end
+
   def draw_vertical(command)
     # command: V X Y1 Y2 C
     segment_drawer(command[2], command[3], command[1], command[4], 'V')
@@ -70,36 +79,5 @@ class BitmapEditor
     (start..finish).each do |px|
       dir == 'V' ? @image[px][constant] = colour : @image[constant][px] = colour
     end
-  end
-
-  def validate_size!(constant, finish, direction)
-    valid = if direction == 'V'
-              @image.length > finish && @image[0].length > constant
-            else
-              @image.length > constant && @image[0].length > finish
-            end
-    raise ValidationError, 'out of bound' unless valid
-  end
-
-  def array_coordinates(x, y)
-    x = x.to_i
-    y = y.to_i
-    [x - 1, y - 1]
-  end
-
-  def validate_colour!(colour)
-    raise ValidationError, 'invalid colour' unless ('A'..'Z').cover?(colour)
-  end
-
-  def validate_file!(file_path)
-    return unless file_path.nil? || !File.exist?(file_path)
-    raise ValidationError, 'please provide correct file'
-  end
-
-  def validate_command!(method, command)
-    raise ValidationError if method.nil?
-    raise ValidationError unless method[:length] == command.length
-
-    raise ValidationError, 'There is no image' if method[:name] != 'create' && @image.nil?
   end
 end
