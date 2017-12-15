@@ -25,7 +25,7 @@ class BitmapEditor
   def create(command)
     m = command[1].to_i
     n = command[2].to_i
-    validate_boundaries!(n, m)
+    raise ValidationError, 'out of bound' if n > 250 || m > 250
     @image = Array.new(n) { Array.new(m, 'O') }
   end
 
@@ -43,6 +43,7 @@ class BitmapEditor
     colour = command[3]
     validate_colour!(colour)
     coordinates = array_coordinates(command[1], command[2])
+    raise ValidationError, 'out of bound' if @image[coordinates[1]].nil? || @image[coordinates[0]].nil?
     @image[coordinates[1]][coordinates[0]] = colour
   end
 
@@ -60,24 +61,29 @@ class BitmapEditor
     y      = y.to_i - 1
     validate_colour!(colour)
     raise ValidationError, 'start greater than finish' if start > finish
+    validate_size!(y, finish, dir)
     (start..finish).each do |x|
       dir == 'V' ? @image[x][y] = colour : @image[y][x] = colour
     end
   end
 
+  def validate_size!(n, m, direction)
+    valid = if direction == 'V'
+              @image.length > m && @image[0].length > n
+            else
+              @image.length > n && @image[0].length > m
+            end
+    raise ValidationError, 'out of bound' unless valid
+  end
+
   def array_coordinates(x, y)
     x = x.to_i
     y = y.to_i
-    validate_boundaries!(x, y)
     [x - 1, y - 1]
   end
 
   def validate_colour!(colour)
     raise ValidationError, 'invalid colour' unless ('A'..'Z').cover?(colour)
-  end
-
-  def validate_boundaries!(n, m)
-    raise ValidationError, 'OutOfBound' if n > 250 || m > 250
   end
 
   def validate_file!(file_path)
@@ -89,6 +95,6 @@ class BitmapEditor
     raise ValidationError if method.nil?
     raise ValidationError unless method[:length] == command.length
 
-    raise ValidationError, 'There is no image to colour' if method == method[:I] && @image.nil?
+    raise ValidationError, 'There is no image' if method[:name] != 'create' && @image.nil?
   end
 end
