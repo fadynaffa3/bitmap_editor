@@ -8,6 +8,9 @@ class BitmapEditor
                H: { name: 'draw_horizontal', length: 5 },
                S: { name: 'show',            length: 1 } }.freeze
 
+  MAX_ROWS    = 250
+  MAX_COLUMNS = 250
+
   def run(file_path)
     validate_file!(file_path)
     File.open(file_path, 'r').each do |line|
@@ -25,7 +28,7 @@ class BitmapEditor
   def create(command)
     m = command[1].to_i
     n = command[2].to_i
-    raise ValidationError, 'out of bound' if n > 250 || m > 250
+    raise ValidationError, 'out of bound' if n > MAX_ROWS || m > MAX_COLUMNS
     @image = Array.new(n) { Array.new(m, 'O') }
   end
 
@@ -48,30 +51,32 @@ class BitmapEditor
   end
 
   def draw_vertical(command)
-    colour_changer(command[2], command[3], command[1], command[4], 'V')
+    # command: V X Y1 Y2 C
+    segment_drawer(command[2], command[3], command[1], command[4], 'V')
   end
 
   def draw_horizontal(command)
-    colour_changer(command[1], command[2], command[3], command[4], 'H')
+    # command: H X1 X2 Y C
+    segment_drawer(command[1], command[2], command[3], command[4], 'H')
   end
 
-  def colour_changer(start, finish, y, colour, dir)
-    start  = start.to_i - 1
-    finish = finish.to_i - 1
-    y      = y.to_i - 1
+  def segment_drawer(start, finish, constant, colour, dir)
+    start    = start.to_i - 1
+    finish   = finish.to_i - 1
+    constant = constant.to_i - 1
     validate_colour!(colour)
     raise ValidationError, 'start greater than finish' if start > finish
-    validate_size!(y, finish, dir)
-    (start..finish).each do |x|
-      dir == 'V' ? @image[x][y] = colour : @image[y][x] = colour
+    validate_size!(constant, finish, dir)
+    (start..finish).each do |px|
+      dir == 'V' ? @image[px][constant] = colour : @image[constant][px] = colour
     end
   end
 
-  def validate_size!(n, m, direction)
+  def validate_size!(constant, finish, direction)
     valid = if direction == 'V'
-              @image.length > m && @image[0].length > n
+              @image.length > finish && @image[0].length > constant
             else
-              @image.length > n && @image[0].length > m
+              @image.length > constant && @image[0].length > finish
             end
     raise ValidationError, 'out of bound' unless valid
   end

@@ -21,7 +21,7 @@ describe BitmapEditor do
         expect { editor.run('somefile.txt') }.to output("Invalid Command :(\n").to_stdout
       end
 
-      it 'will return out of bound when sending n more than 250p' do
+      it 'will return out of bound when sending n more than MAX_COLUMNS' do
         allow(File).to receive(:open).and_return(['I 260 1', 'S'])
         expect { editor.run('somefile.txt') }.to output("out of bound\n").to_stdout
       end
